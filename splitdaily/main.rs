@@ -60,10 +60,10 @@ fn print_help(program: &str) {
         r#"splitdaily - split and convert daily binary data
 
 Usage:
-  {0} <input_file> <YYYYMM>
+  {0} <input_file> <YYYY>
 
 Example:
-  {0} daily.bin 202601
+  {0} daily.bin 2026
 
 Input Record Format (32 bytes):
   date      int32
@@ -77,7 +77,7 @@ Input Record Format (32 bytes):
 
 Processing:
   1. Read binary records
-  2. Filter only specified month
+  2. Filter only specified year
   3. Sort by date ascending
   4. Remove duplicated date records
   5. Convert OHLC from int32 to float32 and divide by 100.0
@@ -94,7 +94,7 @@ Output Record Format (28 bytes):
   amount    float32
 
 Output File:
-  input.bin  -> input.202601
+  input.bin  -> input.2026
 "#,
         program
     );
@@ -113,25 +113,25 @@ fn main() -> io::Result<()> {
     }
 
     let input_file = &args[1];
-    let month = &args[2];
+    let year = &args[2];
 
-    // 检查 YYYYMM
-    if month.len() != 6 || !month.chars().all(|c| c.is_ascii_digit()) {
-        eprintln!("ERROR: invalid month format: {}", month);
-        eprintln!("expected format: YYYYMM");
+    // 检查 YYYY
+    if year.len() != 4 || !year.chars().all(|c| c.is_ascii_digit()) {
+        eprintln!("ERROR: invalid year format: {}", year);
+        eprintln!("expected format: YYYY");
         std::process::exit(1);
     }
 
     println!("Input file : {}", input_file);
-    println!("Target month: {}", month);
+    println!("Target year: {}", year);
 
-    // 202601 -> 20260101 ~ 20260131
-    let month_start: i32 = format!("{}01", month).parse().unwrap();
-    let month_end: i32 = format!("{}31", month).parse().unwrap();
+    // 2026 -> 20260101 ~ 20261231
+    let year_start: i32 = format!("{}0101", year).parse().unwrap();
+    let year_end: i32 = format!("{}1231", year).parse().unwrap();
 
     println!(
         "Date range : {} ~ {}",
-        month_start, month_end
+        year_start, year_end
     );
 
     // 读取整个文件
@@ -170,14 +170,14 @@ fn main() -> io::Result<()> {
         };
         //println!("{:?}",rec);
 
-        // 只保留目标月份
-        if rec.date >= month_start && rec.date <= month_end {
+        // 只保留目标年份
+        if rec.date >= year_start && rec.date <= year_end {
             records.push(rec);
         }
     }
 
     println!(
-        "Records after month filter: {}",
+        "Records after year filter: {}",
         records.len()
     );
 
@@ -203,17 +203,17 @@ fn main() -> io::Result<()> {
     );
 
     // 输出文件:
-    // aaa.bin -> aaa.202601
+    // aaa.bin -> aaa.2026
     let output_file = {
         let path = Path::new(input_file);
         //let stem = path.with_extension("");
-        //format!("{}.{}", stem.to_string_lossy(), month)
+        //format!("{}.{}", stem.to_string_lossy(), year)
 
         let filename = path
             .file_stem()
             .unwrap()
             .to_string_lossy();
-        format!("{}.{}", filename, month)
+        format!("{}.{}", filename, year)
     };
 
     println!("Output file: {}", output_file);
