@@ -1,20 +1,50 @@
-如何处理 AuthenticationError 错误？
-AuthenticationError 通常在什么情况下触发？
-API 密钥失效会引发 AuthenticationError 吗？
-在哪里可以找到有效的 E2B API 密钥？
+什么是 AuthenticationError 错误？
+AuthenticationError 什么时候会发生？
+如何解决 AuthenticationError 错误？
+API 密钥错误会导致 AuthenticationError 吗？
+没有设置 E2B_API_KEY 会怎样？
+AuthenticationError 的错误信息通常是什么？
+如何检查我的 API 密钥是否有效？
+AuthenticationError 是客户端错误还是服务端错误？
+在哪里可以找到我的 E2B API 密钥？
+如何正确设置 E2B API 密钥？
 AuthenticationError 会导致程序崩溃吗？
-如何检查我的 E2B SDK 认证配置是否正确？
-AuthenticationError 属于客户端错误还是服务端错误？
-环境变量未正确设置会触发 AuthenticationError 吗？
-在 JavaScript 中如何捕获 AuthenticationError？
-AuthenticationError 有特定的错误代码（code）吗？
-使用错误的 API 密钥格式会引发什么错误？
-AuthenticationError 的错误信息中包含哪些关键提示？
-如果遇到 AuthenticationError，应该优先排查哪个文件？
-团队项目的 API 密钥权限不足会引发 AuthenticationError 吗？
-如何通过代码验证 API 密钥是否有效而不用真正运行核心业务？
-AuthenticationError 与其他的 E2B 错误有什么区别？
-SDK 版本过旧会导致 AuthenticationError 吗？
-在云端部署时如何安全地避免 AuthenticationError？
-AuthenticationError 发生时，E2B 的会话（Sandbox）还会继续运行吗？
-重启开发环境能解决由于缓存引起的 AuthenticationError 吗？
+我可以用 try-catch 捕获 AuthenticationError 吗？
+为什么我的 API 密钥会被拒绝？
+API 密钥过期会触发 AuthenticationError 吗？
+AuthenticationError 的错误代码是什么？
+如何更新过期的 API 密钥？
+环境变量配置错误会引发这个错误吗？
+AuthenticationError 属于哪个 SDK 版本？
+在 JS SDK 中如何导入 AuthenticationError？
+如果遇到 AuthenticationError 该向谁求助？
+免费额度用完会报 AuthenticationError 吗？
+AuthenticationError 发生时 sandbox 会启动吗？
+同一个 API 密钥在多个项目使用会报错吗？
+我的 API 密钥泄露了会触发这个错误吗？
+如何验证我的 E2B 账户已经激活？
+AuthenticationError 和 AuthorizationError 有什么区别？
+初始化 E2B 客户端时必须传入密钥吗？
+网络问题会导致 AuthenticationError 吗？
+如何输出 AuthenticationError 的详细堆栈信息？
+在本地开发时怎么避免 AuthenticationError？
+在 Vercel 部署时怎么配置避免这个错误？
+API 密钥的大小写敏感吗？
+复制 API 密钥时带了空格会报错吗？
+在哪里看 E2B 的服务运行状态？
+AuthenticationError 是一个类（Class）吗？
+如何判断一个错误是不是 AuthenticationError？
+修改 API 密钥后需要重启应用吗？
+在生产环境中如何安全地处理 AuthenticationError？
+撤销 API 密钥后会立刻发生这个错误吗？
+AuthenticationError 包含哪些属性？
+这个错误有特定的 HTTP 状态码吗？
+单例模式下怎么配置才不会报这个错误？
+传入空的字符串作为 API 密钥会怎样？
+我的团队权限变更会导致 AuthenticationError 吗？
+如何自动捕获并记录 AuthenticationError？
+这个错误在 Python SDK 中叫什么？
+JS SDK 2.29.1 版本修复过这个错误吗？
+API 密钥被禁用后会发生什么？
+AuthenticationError 发生时会有重试机制吗？
+如何确认是 API 密钥问题还是网络拦截问题？
