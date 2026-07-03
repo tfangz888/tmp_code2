@@ -1,36 +1,25 @@
-下面列出 **30 个与沙箱（Sandbox）技术相关的专业名词**，适合学习、课堂、面试或整理知识点。
+{
+  "$schema": "https://opencode.ai/config.json",
+  "provider": {
+    "codexcn": {
+      "npm": "@ai-sdk/openai-compatible",
+      "name": "codexcn OpenAI Proxy",
+      "options": {
+        "baseURL": "https://api2.codexcn.com/v1",
+        "apiKey": "sk-pWR3L0EcFYWYe0mCzwVSUJC3w8kG7q8dwVArMJt0fDCIEzaE"
+      },
+      "models": {
+        "gpt-5.5": {
+          "name": "GPT-5.5"
+        },
+        "gpt-5.4": {
+          "name": "GPT-5.4"
+        },
+        "gpt-5.4-mini": {
+          "name": "GPT-5.4 Mini"
+        }
+      }
+    }
+  }
 
-| 序号 | 专业名词                       | 简要说明              |
-| -- | -------------------------- | ----------------- |
-| 1  | 沙箱（Sandbox）                | 隔离程序运行环境          |
-| 2  | 隔离（Isolation）              | 将进程与系统资源分离        |
-| 3  | 容器（Container）              | 轻量级应用隔离技术         |
-| 4  | 虚拟机（Virtual Machine）       | 完整模拟计算机运行环境       |
-| 5  | 进程隔离（Process Isolation）    | 限制进程之间相互影响        |
-| 6  | 命名空间（Namespace）            | 隔离系统资源视图          |
-| 7  | 控制组（cgroups）               | 控制资源使用量           |
-| 8  | 权限控制（Access Control）       | 管理资源访问权限          |
-| 9  | 最小权限原则（Least Privilege）    | 仅授予必要权限           |
-| 10 | 系统调用过滤（Seccomp）            | 限制允许执行的系统调用       |
-| 11 | AppArmor                   | Linux 安全访问控制机制    |
-| 12 | SELinux                    | 强制访问控制安全模块        |
-| 13 | 文件系统隔离                     | 限制文件访问范围          |
-| 14 | 网络隔离                       | 限制网络通信能力          |
-| 15 | 资源限制                       | 控制 CPU、内存等资源      |
-| 16 | 白名单（Whitelist）             | 仅允许指定操作执行         |
-| 17 | 黑名单（Blacklist）             | 禁止指定操作执行          |
-| 18 | 恶意软件分析                     | 在沙箱中检测恶意行为        |
-| 19 | 动态分析（Dynamic Analysis）     | 运行过程中分析程序行为       |
-| 20 | 静态分析（Static Analysis）      | 不运行程序进行分析         |
-| 21 | 行为监测（Behavior Monitoring）  | 监控程序运行行为          |
-| 22 | 漏洞利用（Exploit）              | 利用程序漏洞攻击系统        |
-| 23 | 权限提升（Privilege Escalation） | 获取更高系统权限          |
-| 24 | 沙箱逃逸（Sandbox Escape）       | 突破沙箱限制访问系统        |
-| 25 | 安全策略（Security Policy）      | 定义沙箱限制规则          |
-| 26 | 可信执行环境（TEE）                | 提供受保护的运行环境        |
-| 27 | Chrome Sandbox             | 浏览器多进程沙箱机制        |
-| 28 | Docker Sandbox             | 基于容器的隔离环境         |
-| 29 | Windows Sandbox            | Windows 提供的临时隔离环境 |
-| 30 | Firejail                   | Linux 用户空间沙箱工具    |
-
-以上术语覆盖了**基础概念、Linux 沙箱、安全机制、恶意软件分析、浏览器沙箱、容器技术**等多个方面，适合作为沙箱技术入门和专业学习的核心术语。
+}
