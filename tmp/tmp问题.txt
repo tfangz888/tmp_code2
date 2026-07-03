@@ -1,1 +1,20 @@
-
+如何处理 AuthenticationError 错误？
+AuthenticationError 通常在什么情况下触发？
+API 密钥失效会引发 AuthenticationError 吗？
+在哪里可以找到有效的 E2B API 密钥？
+AuthenticationError 会导致程序崩溃吗？
+如何检查我的 E2B SDK 认证配置是否正确？
+AuthenticationError 属于客户端错误还是服务端错误？
+环境变量未正确设置会触发 AuthenticationError 吗？
+在 JavaScript 中如何捕获 AuthenticationError？
+AuthenticationError 有特定的错误代码（code）吗？
+使用错误的 API 密钥格式会引发什么错误？
+AuthenticationError 的错误信息中包含哪些关键提示？
+如果遇到 AuthenticationError，应该优先排查哪个文件？
+团队项目的 API 密钥权限不足会引发 AuthenticationError 吗？
+如何通过代码验证 API 密钥是否有效而不用真正运行核心业务？
+AuthenticationError 与其他的 E2B 错误有什么区别？
+SDK 版本过旧会导致 AuthenticationError 吗？
+在云端部署时如何安全地避免 AuthenticationError？
+AuthenticationError 发生时，E2B 的会话（Sandbox）还会继续运行吗？
+重启开发环境能解决由于缓存引起的 AuthenticationError 吗？
