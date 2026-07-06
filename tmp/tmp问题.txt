@@ -1,6 +1,3 @@
-什么是 AuthenticationError 错误？
-AuthenticationError 什么时候会发生？
-如何解决 AuthenticationError 错误？
-API 密钥错误会导致 AuthenticationError 吗？
-没有设置 E2B_API_KEY 会怎样？
-AuthenticationError 的错误信息通常是什么？
+
+        "baseURL": "https://api2.codexcn.com/v1",
+        "apiKey": "sk-pWR3L0EcFYWYe0mCzwVSUJC3w8kG7q8dwVArMJt0fDCIEzaa"
