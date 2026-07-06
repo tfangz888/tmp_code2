@@ -1,3 +1,50 @@
-
-        "baseURL": "https://api2.codexcn.com/v1",
-
+什么是 rclone？请简单回答。
+rclone 的主要功能是什么？请简单回答。
+rclone 支持哪些常见的云存储？请简单回答。
+如何在 Linux 系统上安装 rclone？请简单回答。
+查看当前 rclone 版本的命令是什么？请简单回答。
+rclone 配置文件默认保存在哪里？请简单回答。
+如何开始交互式配置一个新的 remote？请简单回答。
+什么是 Ceph RGW？请简单回答。
+Ceph RGW 提供什么类型的对象存储接口？请简单回答。
+配置 Ceph RGW 时需要哪两个关键的凭证？请简单回答。
+在 rclone 中配置 Ceph RGW 应选择哪种服务类型？请简单回答。
+配置 Ceph RGW 时，endpoint 参数的作用是什么？请简单回答。
+如何列出已配置的所有 remote 名称？请简单回答。
+如何测试与 Ceph RGW 的连接是否成功？请简单回答。
+rclonels 和 rclonelist有什么区别？请简单回答。
+如何创建一个新的 Ceph RGW 存储桶（bucket）？请简单回答。
+如何列出 Ceph RGW 中某个存储桶下的所有文件？请简单回答。
+rclonemount 命令的作用是什么？请简单回答。
+在 Linux 中挂载 Ceph RGW 需要系统安装什么组件？请简单回答。
+基础的 rclonemount 命令格式是怎样的？请简单回答。
+挂载时参数 --vfs-cache-mode off 表示什么？请简单回答.
+挂载时参数 --vfs-cache-mode writes 有什么用？请简单回答。
+挂载时参数 --vfs-cache-mode full 有什么优势？请简单回答。
+如何让普通用户（非 root）读写挂载的目录？请简单回答。
+挂载时设置 --dir-cache-time 的目的是什么？请简单回答。
+如何在前台运行挂载并输出调试日志？请简单回答。
+如何在后台运行 rclonemount 进程？请简单回答。
+挂载成功后，如何使用系统命令查看挂载点容量？请简单回答。
+如何安全地卸载（unmount）一个 rclone 挂载点？请简单回答。
+挂载时提示“Transport endpoint is not connected”该怎么办？请简单回答。
+什么是 Linux 的 systemd 服务？请简单回答。
+为什么要将 rclonemount 配置为 systemd 服务？请简单回答。
+rclone 的 systemd 配置文件通常放在哪个目录下？请简单回答。
+systemd 配置文件中 [Unit] 部分的 After=network-online.target 代表什么？请简单回答。
+systemd 配置文件中 [Service] 的 Type=notify 有什么作用？请简单回答。
+为什么在 systemd 服务文件中建议使用 rclone 的绝对路径？请简单回答。
+如何指定 systemd 服务以特定用户身份运行 rclone？请简单回答。
+服务文件中的 Restart=on-failure 参数有什么用？请简单回答。
+编写完 systemd 配置文件后，首先需要执行什么命令加载它？请简单回答。
+如何启动编写好的 rclone systemd 服务？请简单回答.
+如何设置 rclone systemd 服务开机自动启动？请简单回答。
+如何查看 rclone systemd 服务的运行状态？请简单回答。
+如何停止正在运行的 rclone systemd 服务？请简单回答。
+如何查看 rclone systemd 服务的历史日志？请简单回答。
+rclone 挂载 Ceph RGW 时如何限制上传或下载带宽？请简单回答。
+挂载大文件时，--buffer-size 参数有什么作用？请简单回答。
+如何让 rclone 在挂载时自动处理 Ceph RGW 的分块上传？请简单回答。
+修改了 rclone 配置文件后，systemd 服务需要重启吗？请简单回答。
+如果 Ceph RGW 使用的是自签名证书，rclone 挂载时如何跳过验证？请简单回答。
+如何彻底删除一个已配置的 rclone 开机自启服务？请简单回答。
