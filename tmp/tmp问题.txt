@@ -1,42 +1,34 @@
 #!/bin/bash
-# 检查所有挂载点使用率，超过阈值就记录日志
-THRESHOLD=70
-# 定义要排除的硬盘设备（用空格分隔）
-EXCLUDE_DISKS="tmpfs devtmpfs udev sysfs proc overlay"
+# download-artifacts.sh - 仅下载原始文件，不处理
 
-df -h | while read filesystem size used avail percent mountpoint; do
-    # 跳过标题行和特殊文件系统
-    if [[ "$percent" =~ ^[0-9]+%$ ]] && [ "${percent%\%}" -gt $THRESHOLD ]; then
-        # 检查是否在排除的硬盘列表中
-        skip=false
-        for exclude in $EXCLUDE_DISKS; do
-            if [[ "$filesystem" == "$exclude"* ]]; then
-                skip=true
-                break
-            fi
-        done
-        
-        # 如果不在排除列表中，则输出
-        if [ "$skip" = false ]; then
-            echo "$(date): 硬盘 $filesystem 挂载在 $mountpoint 使用率 $percent 超过${THRESHOLD}%"
-        fi
-    fi
-done
+set -e
 
+ARCH="$(uname -m)"
+S3="https://s3.amazonaws.com/spec.ccfc.min"
 
+echo "🔍 检测架构: $ARCH"
 
+# 获取最新 CI 构建目录
+CI_ARTIFACTS_PREFIX=$(curl -fsSL "$S3?list-type=2&prefix=firecracker-ci/&delimiter=/" \
+    | grep -oP "(?<=<Prefix>)firecracker-ci/[0-9]{8}-[^/]+/(?=</Prefix>)" \
+    | sort | tail -1)
 
+echo "📁 使用 CI 前缀: ${CI_ARTIFACTS_PREFIX}"
 
+# 下载内核
+latest_kernel_key=$(curl -fsSL "$S3?list-type=2&prefix=${CI_ARTIFACTS_PREFIX}${ARCH}/vmlinux-" \
+    | grep -oP "(?<=<Key>)(${CI_ARTIFACTS_PREFIX}${ARCH}/vmlinux-[0-9]+\.[0-9]+\.[0-9]{1,3})(?=</Key>)" \
+    | sort -V | tail -1)
+echo "📥 下载内核: $(basename "$latest_kernel_key")"
+wget -q "$S3/${latest_kernel_key}" -O "$(basename "$latest_kernel_key")"
 
-sudo nano /etc/systemd/system/disk-check.service
+# 下载 Ubuntu rootfs
+latest_ubuntu_key=$(curl -fsSL "$S3?list-type=2&prefix=${CI_ARTIFACTS_PREFIX}${ARCH}/ubuntu-" \
+    | grep -oP "(?<=<Key>)(${CI_ARTIFACTS_PREFIX}${ARCH}/ubuntu-[0-9]+\.[0-9]+\.squashfs)(?=</Key>)" \
+    | sort -V | tail -1)
+echo "📥 下载 rootfs: $(basename "$latest_ubuntu_key")"
+wget -q "$S3/$latest_ubuntu_key" -O "$(basename "$latest_ubuntu_key")"
 
-[Unit]
-Description=Check Disk Usage
-After=multi-user.target
-
-[Service]
-Type=oneshot
-ExecStart=/usr/local/bin/check-disk.sh
-
-[Install]
-WantedBy=multi-user.target
+echo
+echo "✅ 下载完成！请将以下文件拷贝到无网机器："
+ls vmlinux-* ubuntu-*.squashfs
