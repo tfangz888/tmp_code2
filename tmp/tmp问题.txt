@@ -1,1 +1,11 @@
 curl "https://s3.amazonaws.com/spec.ccfc.min/?list-type=2&prefix=firecracker-ci/"
+
+curl -s \
+"https://s3.amazonaws.com/spec.ccfc.min/?list-type=2&prefix=firecracker-ci/" \
+| python3 -c '
+import sys
+import xml.dom.minidom
+
+xml = sys.stdin.read()
+print(xml.dom.minidom.parseString(xml).toprettyxml())
+'
