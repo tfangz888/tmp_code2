@@ -1,12 +1,247 @@
-go build -o /tmp/snapshot snapshot.go
-chmod a+x /tmp/snapshot
+package main
 
-# nc -U /tmp/snapshot.sock
-# echo "ping" | nc -U /tmp/snapshot.sock
-# echo "status" | nc -U /tmp/snapshot.sock
-# echo "set loglevel debug" | nc -U /tmp/snapshot.sock
-# echo "get loglevel" | nc -U /tmp/snapshot.sock
-# echo "reload" | nc -U /tmp/snapshot.sock
-# echo "stop" | nc -U /tmp/snapshot.sock
+import (
+    "bufio"
+    "errors"
+    "fmt"
+    "net"
+    "os"
+    "os/signal"
+    "path/filepath"
+    "strings"
+    "sync"
+    "syscall"
+    "time"
+)
+
+const (
+    // defaultSock = "/run/snapshot-daemon/snapshot.sock"
+    // defaultPid  = "/run/snapshot-daemon/snapshot.pid"
+    defaultSock = "/tmp/snapshot.sock"
+    defaultPid  = "/tmp/snapshot.pid"
+)
+
+type ServerState struct {
+    mu          sync.RWMutex
+    running     bool
+    reloadCount int
+    kv          map[string]string
+    stopOnce    sync.Once
+    stopCh      chan struct{}
+    exitCode    int
+}
+
+func newServerState() *ServerState {
+    return &ServerState{
+        running: true,
+        kv: map[string]string{
+            "loglevel": "info",
+            "mode":     "normal",
+        },
+        stopCh:   make(chan struct{}),
+        exitCode: 0,
+    }
+}
+
+func (s *ServerState) stopWithCode(code int) {
+    s.stopOnce.Do(func() {
+        s.mu.Lock()
+        s.running = false
+        s.exitCode = code
+        s.mu.Unlock()
+        close(s.stopCh)
+    })
+}
+
+func (s *ServerState) handleCommand(line string) string {
+    line = strings.TrimSpace(line)
+    if line == "" {
+        return "ERR empty command\n"
+    }
+
+    parts := strings.Fields(line)
+    cmd := parts[0]
+
+    s.mu.Lock()
+    defer s.mu.Unlock()
+
+    switch cmd {
+    case "ping":
+        return "OK pong\n"
+
+    case "status":
+        var b strings.Builder
+        b.WriteString("OK\n")
+        b.WriteString(fmt.Sprintf("running=%v\n", s.running))
+        b.WriteString(fmt.Sprintf("reload_count=%d\n", s.reloadCount))
+        for k, v := range s.kv {
+            b.WriteString(fmt.Sprintf("%s=%s\n", k, v))
+        }
+        return b.String()
+
+    case "reload":
+        s.reloadCount++
+        return "OK reloaded\n"
+
+    case "stop":
+        go s.stopWithCode(0)
+        return "OK stopping\n"
+
+    case "restart":
+        go s.stopWithCode(1)
+        return "OK restarting\n"
+
+    case "get":
+        if len(parts) != 2 {
+            return "ERR usage: get key\n"
+        }
+        key := parts[1]
+        val, ok := s.kv[key]
+        if !ok {
+            return "ERR key not found\n"
+        }
+        return fmt.Sprintf("OK %s=%s\n", key, val)
+
+    case "set":
+        if len(parts) < 3 {
+            return "ERR usage: set key value\n"
+        }
+        key := parts[1]
+        val := strings.Join(parts[2:], " ")
+        s.kv[key] = val
+        return fmt.Sprintf("OK %s=%s\n", key, val)
+
+    case "snapshot":
+        if len(parts) < 2 {
+            return "ERR usage: snapshot code1 code2 ...\n"
+        }
+        codes := make([]string, 0, len(parts[1:]))
+        for _, v := range parts[1:] {
+            v = strings.TrimSpace(v)
+            if v != "" {
+                codes = append(codes, v)
+            }
+        }
+
+        _ = codes
+
+        return fmt.Sprintf("OK\n")
+
+    default:
+        return "ERR unknown command\n"
+    }
+}
+
+func handleConn(conn net.Conn, st *ServerState) {
+    defer conn.Close()
+    _ = conn.SetDeadline(time.Now().Add(30 * time.Second))
+
+    reader := bufio.NewReader(conn)
+    line, err := reader.ReadString('\n')
+    if err != nil {
+        _, _ = conn.Write([]byte("ERR read failed\n"))
+        return
+    }
+
+    resp := st.handleCommand(line)
+    _, _ = conn.Write([]byte(resp))
+}
+
+func removeIfExists(path string) {
+    _ = os.Remove(path)
+}
+
+func ensureParentDir(path string) error {
+    return os.MkdirAll(filepath.Dir(path), 0755)
+}
+
+func writePID(pidFile string, pid int) error {
+    if err := ensureParentDir(pidFile); err != nil {
+        return err
+    }
+    return os.WriteFile(pidFile, []byte(fmt.Sprintf("%d\n", pid)), 0644)
+}
+
+func getEnv(key, def string) string {
+    v := strings.TrimSpace(os.Getenv(key))
+    if v == "" {
+        return def
+    }
+    return v
+}
+
+func runServer(sockFile, pidFile string) int {
+    if err := ensureParentDir(sockFile); err != nil {
+        fmt.Println("ensureParentDir error:", err)
+        return 1
+    }
+
+    removeIfExists(sockFile)
+    defer removeIfExists(sockFile)
+    defer removeIfExists(pidFile)
+
+    l, err := net.Listen("unix", sockFile)
+    if err != nil {
+        fmt.Println("listen error:", err)
+        return 1
+    }
+    defer l.Close()
+
+    _ = os.Chmod(sockFile, 0660)
+
+    if err := writePID(pidFile, os.Getpid()); err != nil {
+        fmt.Println("writePID error:", err)
+        return 1
+    }
+
+    st := newServerState()
+
+    fmt.Printf("server started pid=%d sock=%s\n", os.Getpid(), sockFile)
+
+    // systemd stop 时接收信号
+    sigCh := make(chan os.Signal, 2)
+    signal.Notify(sigCh, syscall.SIGINT, syscall.SIGTERM)
+    go func() {
+        sig := <-sigCh
+        fmt.Printf("received signal: %v\n", sig)
+        st.stopWithCode(0)
+    }()
+
+    // 收到 stop / restart 命令后关闭 listener
+    go func() {
+        <-st.stopCh
+        _ = l.Close()
+    }()
+
+    for {
+        conn, err := l.Accept()
+        if err != nil {
+            if errors.Is(err, net.ErrClosed) {
+                break
+            }
+            if ne, ok := err.(net.Error); ok && ne.Temporary() {
+                time.Sleep(100 * time.Millisecond)
+                continue
+            }
+            continue
+        }
+        go handleConn(conn, st)
+    }
+
+    st.mu.RLock()
+    code := st.exitCode
+    st.mu.RUnlock()
+
+    fmt.Printf("server stopped exitCode=%d\n", code)
+    return code
+}
+
+func main() {
+    sockFile := getEnv("APP_SOCK", defaultSock)
+    pidFile := getEnv("APP_PID", defaultPid)
+
+    code := runServer(sockFile, pidFile)
+    os.Exit(code)
+}
 
 
