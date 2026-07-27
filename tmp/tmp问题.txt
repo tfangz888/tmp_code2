@@ -1,13 +1,185 @@
-go build -o /tmp/snapshot snapshot.go
-chmod a+x /tmp/snapshot
+package main
 
-# nc -U /tmp/snapshot.sock
-# echo "ping" | nc -U /tmp/snapshot.sock
-# echo "status" | nc -U /tmp/snapshot.sock
-# echo "set loglevel debug" | nc -U /tmp/snapshot.sock
-# echo "get loglevel" | nc -U /tmp/snapshot.sock
-# echo "reload" | nc -U /tmp/snapshot.sock
-# echo "stop" | nc -U /tmp/snapshot.sock
-# echo "restart" | nc -U /tmp/snapshot.sock
+import (
+	"bufio"
+	"fmt"
+	"os"
+	"strings"
+	"sync"
+	"sync/atomic"
+)
 
+// ------------------- Server -------------------
 
+type Server struct {
+	IP string
+	Conn any
+
+	Successcnt atomic.Int64
+	Failedcnt  atomic.Int64
+}
+
+// ------------------- RoundRobin -------------------
+
+type RoundRobin struct {
+	mu      sync.Mutex
+	servers []*Server
+	index   int
+}
+
+func newRoundRobin(filename string) (*RoundRobin, error) {
+	file, err := os.Open(filename)
+	if err != nil {
+		return nil, err
+	}
+	defer file.Close()
+
+	var servers []*Server
+
+	scanner := bufio.NewScanner(file)
+	for scanner.Scan() {
+		ip := strings.TrimSpace(scanner.Text())
+		if ip == "" {
+			continue
+		}
+
+		servers = append(servers, &Server{
+			IP: ip,
+		})
+	}
+
+	if err := scanner.Err(); err != nil {
+		return nil, err
+	}
+
+	return &RoundRobin{
+		servers: servers,
+	}, nil
+}
+
+func (r *RoundRobin) next() *Server {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+
+	if len(r.servers) == 0 {
+		return nil
+	}
+
+	s := r.servers[r.index]
+	r.index = (r.index + 1) % len(r.servers)
+	return s
+}
+
+func (r *RoundRobin) len() int {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	return len(r.servers)
+}
+
+// ------------------- 单例封装 -------------------
+
+var (
+	rrInstance *RoundRobin
+	rrOnce     sync.Once
+	rrErr      error
+)
+
+func getRoundRobin() (*RoundRobin, error) {
+	rrOnce.Do(func() {
+		rrInstance, rrErr = newRoundRobin("ip_test.txt")
+	})
+	return rrInstance, rrErr
+}
+
+// ------------------- 对外暴露的方法 -------------------
+
+// 获取下一个 server
+func NextServer() (*Server, error) {
+	rr, err := getRoundRobin()
+	if err != nil {
+		return nil, err
+	}
+
+	s := rr.next()
+	if s == nil {
+		return nil, fmt.Errorf("no available server")
+	}
+	return s, nil
+}
+
+// 标记成功
+func MarkSuccess(s *Server) {
+	if s == nil {
+		return
+	}
+	s.Successcnt.Add(1)
+}
+
+// 标记失败
+func MarkFailed(s *Server) {
+	if s == nil {
+		return
+	}
+	s.Failedcnt.Add(1)
+}
+
+// 读取成功次数
+func GetSuccessCount(s *Server) int64 {
+	if s == nil {
+		return 0
+	}
+	return s.Successcnt.Load()
+}
+
+// 读取失败次数
+func GetFailedCount(s *Server) int64 {
+	if s == nil {
+		return 0
+	}
+	return s.Failedcnt.Load()
+}
+
+// 获取 server 总数
+func ServerCount() (int, error) {
+	rr, err := getRoundRobin()
+	if err != nil {
+		return 0, err
+	}
+	return rr.len(), nil
+}
+
+// ------------------- main -------------------
+// 异步执行，同步等待所有的执行完
+func main() {
+	var wg sync.WaitGroup
+
+	for i := 0; i < 20; i++ {
+		wg.Add(1)
+
+		go func(id int) {
+			defer wg.Done()
+
+			s, err := NextServer()
+			if err != nil {
+				fmt.Println("获取 server 失败：", err)
+				return
+			}
+
+			// 模拟业务
+			if id%3 == 0 {
+				MarkFailed(s)
+			} else {
+				MarkSuccess(s)
+			}
+
+			fmt.Printf("goroutine=%d use=%s success=%d failed=%d\n",
+				id,
+				s.IP,
+				GetSuccessCount(s),
+				GetFailedCount(s),
+			)
+		}(i)
+	}
+
+	wg.Wait()
+}
