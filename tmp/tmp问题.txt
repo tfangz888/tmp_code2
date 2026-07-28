@@ -1,185 +1,52 @@
-package main
+version: '3.8'
 
-import (
-	"bufio"
-	"fmt"
-	"os"
-	"strings"
-	"sync"
-	"sync/atomic"
-)
+services:
+  mariadb:
+    image: mariadb
+    container_name: mariadb
+    restart: unless-stopped
+    
+    environment:
+      MARIADB_ROOT_PASSWORD: root123
+      MARIADB_DATABASE: myapp
+      MARIADB_USER: appuser
+      MARIADB_PASSWORD: pass123
+    
+    ports:
+      - "3306:3306"  # 如需外部访问
+    
+    volumes:
+      - /aaa/bbb:/var/lib/mysql
+    
+    command: >
+      --character-set-server=utf8mb4
+      --collation-server=utf8mb4_unicode_ci
+      --skip-name-resolve
+      --performance-schema=OFF
+      --innodb-buffer-pool-size=64M
+      --max-connections=20
+    
+    healthcheck:  # 可选：健康检查
+      test: ["CMD", "healthcheck.sh", "--connect"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
 
-// ------------------- Server -------------------
 
-type Server struct {
-	IP string
-	Conn any
 
-	Successcnt atomic.Int64
-	Failedcnt  atomic.Int64
-}
+# 2. 启动服务
+# docker-compose up -d
 
-// ------------------- RoundRobin -------------------
+# 3. 查看状态
+# docker-compose ps
 
-type RoundRobin struct {
-	mu      sync.Mutex
-	servers []*Server
-	index   int
-}
+# 4. 测试连接
+# docker-compose exec mariadb mysql -u root -proot123 -e "SHOW DATABASES;"
 
-func newRoundRobin(filename string) (*RoundRobin, error) {
-	file, err := os.Open(filename)
-	if err != nil {
-		return nil, err
-	}
-	defer file.Close()
+# 5. 停止服务
+# docker-compose stop
 
-	var servers []*Server
+# 6. 重启服务
+# docker-compose restart
 
-	scanner := bufio.NewScanner(file)
-	for scanner.Scan() {
-		ip := strings.TrimSpace(scanner.Text())
-		if ip == "" {
-			continue
-		}
 
-		servers = append(servers, &Server{
-			IP: ip,
-		})
-	}
-
-	if err := scanner.Err(); err != nil {
-		return nil, err
-	}
-
-	return &RoundRobin{
-		servers: servers,
-	}, nil
-}
-
-func (r *RoundRobin) next() *Server {
-	r.mu.Lock()
-	defer r.mu.Unlock()
-
-	if len(r.servers) == 0 {
-		return nil
-	}
-
-	s := r.servers[r.index]
-	r.index = (r.index + 1) % len(r.servers)
-	return s
-}
-
-func (r *RoundRobin) len() int {
-	r.mu.Lock()
-	defer r.mu.Unlock()
-	return len(r.servers)
-}
-
-// ------------------- 单例封装 -------------------
-
-var (
-	rrInstance *RoundRobin
-	rrOnce     sync.Once
-	rrErr      error
-)
-
-func getRoundRobin() (*RoundRobin, error) {
-	rrOnce.Do(func() {
-		rrInstance, rrErr = newRoundRobin("ip_test.txt")
-	})
-	return rrInstance, rrErr
-}
-
-// ------------------- 对外暴露的方法 -------------------
-
-// 获取下一个 server
-func NextServer() (*Server, error) {
-	rr, err := getRoundRobin()
-	if err != nil {
-		return nil, err
-	}
-
-	s := rr.next()
-	if s == nil {
-		return nil, fmt.Errorf("no available server")
-	}
-	return s, nil
-}
-
-// 标记成功
-func MarkSuccess(s *Server) {
-	if s == nil {
-		return
-	}
-	s.Successcnt.Add(1)
-}
-
-// 标记失败
-func MarkFailed(s *Server) {
-	if s == nil {
-		return
-	}
-	s.Failedcnt.Add(1)
-}
-
-// 读取成功次数
-func GetSuccessCount(s *Server) int64 {
-	if s == nil {
-		return 0
-	}
-	return s.Successcnt.Load()
-}
-
-// 读取失败次数
-func GetFailedCount(s *Server) int64 {
-	if s == nil {
-		return 0
-	}
-	return s.Failedcnt.Load()
-}
-
-// 获取 server 总数
-func ServerCount() (int, error) {
-	rr, err := getRoundRobin()
-	if err != nil {
-		return 0, err
-	}
-	return rr.len(), nil
-}
-
-// ------------------- main -------------------
-// 异步执行，同步等待所有的执行完
-func main() {
-	var wg sync.WaitGroup
-
-	for i := 0; i < 20; i++ {
-		wg.Add(1)
-
-		go func(id int) {
-			defer wg.Done()
-
-			s, err := NextServer()
-			if err != nil {
-				fmt.Println("获取 server 失败：", err)
-				return
-			}
-
-			// 模拟业务
-			if id%3 == 0 {
-				MarkFailed(s)
-			} else {
-				MarkSuccess(s)
-			}
-
-			fmt.Printf("goroutine=%d use=%s success=%d failed=%d\n",
-				id,
-				s.IP,
-				GetSuccessCount(s),
-				GetFailedCount(s),
-			)
-		}(i)
-	}
-
-	wg.Wait()
-}
