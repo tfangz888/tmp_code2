@@ -1,52 +1,24 @@
-version: '3.8'
+import time
+import pykx as kx
+import pandas as pd
 
-services:
-  mariadb:
-    image: mariadb
-    container_name: mariadb
-    restart: unless-stopped
+# 使用 with 管理 kdb+ 连接，循环结束或中断时自动关闭
+with kx.QConnection(host='localhost', port=5010) as conn:
+    print("已建立连接，开始每 5 秒持续发送数据（按 Ctrl+C 终止）...")
     
-    environment:
-      MARIADB_ROOT_PASSWORD: root123
-      MARIADB_DATABASE: myapp
-      MARIADB_USER: appuser
-      MARIADB_PASSWORD: pass123
-    
-    ports:
-      - "3306:3306"  # 如需外部访问
-    
-    volumes:
-      - /aaa/bbb:/var/lib/mysql
-    
-    command: >
-      --character-set-server=utf8mb4
-      --collation-server=utf8mb4_unicode_ci
-      --skip-name-resolve
-      --performance-schema=OFF
-      --innodb-buffer-pool-size=64M
-      --max-connections=20
-    
-    healthcheck:  # 可选：健康检查
-      test: ["CMD", "healthcheck.sh", "--connect"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
+    while True:
+        # 1. 动态生成最新的 3 条数据
+        now = pd.Timestamp.now()
+        df = pd.DataFrame({
+            'time': [now + pd.Timedelta(milliseconds=i * 100) for i in range(3)],
+            'sym': ['AAPL', 'GOOG', 'MSFT'],
+            'price': [150.6, 2806.0, 306.2],
+            'size': [106, 206, 156]
+        })
 
+        # 2. 异步推送数据至 kdb+ 目标进程
+        conn('{ [df] `tradeb insert df }', df, wait=False)
+        print(f"[{now}] 已成功推送 {len(df)} 条记录")
 
-
-# 2. 启动服务
-# docker-compose up -d
-
-# 3. 查看状态
-# docker-compose ps
-
-# 4. 测试连接
-# docker-compose exec mariadb mysql -u root -proot123 -e "SHOW DATABASES;"
-
-# 5. 停止服务
-# docker-compose stop
-
-# 6. 重启服务
-# docker-compose restart
-
-
+        # 3. 间隔 5 秒
+        time.sleep(5)
