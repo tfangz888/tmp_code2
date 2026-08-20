@@ -1,6 +1,16 @@
+# 先要在 tickerplant的符号表里定义表结构
+# kdb/tickerplant/tick/symA.q
+# trade:([] time:`timestamp$(); sym:`symbol$(); price:`float$(); size:`long$())
+
+import os
+# 声明license路径
+os.environ['QLIC'] = '/finlab.basic/kx'
+
 import time
 import pykx as kx
 import pandas as pd
+
+TABLE_NAME = 'trade'
 
 # 使用 with 管理 kdb+ 连接，循环结束或中断时自动关闭
 with kx.QConnection(host='localhost', port=5010) as conn:
@@ -15,10 +25,22 @@ with kx.QConnection(host='localhost', port=5010) as conn:
             'price': [150.6, 2806.0, 306.2],
             'size': [106, 206, 156]
         })
+        
+        # 关键：显式转为 category，保证转为 kdb+ 的 symbol
+        df['sym'] = df['sym'].astype('category')
+        df['size'] = df['size'].astype('int64')
 
         # 2. 异步推送数据至 kdb+ 目标进程
-        conn('{ [df] `tradeb insert df }', df, wait=False)
+        try:
+            result = conn(f'{{ [df] `{TABLE_NAME} insert df }}', df, wait=False) # 异步插入
+            #result = conn('{ [df] `TABLE_NAME insert df }', kx.Table(df) )
+            #result = conn('{ [df] `TABLE_NAME insert df }', df )
+            print(" 返回插入结果:", result)
+        except Exception as e:
+            print("插入失败，错误信息:", e)
         print(f"[{now}] 已成功推送 {len(df)} 条记录")
+        #print("kdb+ 内存表总行数:", conn(f'count {TABLE_NAME}'))
+#        print("kdb+ 内存表最新 3 条:\n", conn(f'3#{TABLE_NAME}'))
 
         # 3. 间隔 5 秒
         time.sleep(5)
