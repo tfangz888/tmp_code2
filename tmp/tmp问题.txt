@@ -6,41 +6,64 @@ import os
 # 声明license路径
 os.environ['QLIC'] = '/finlab.basic/kx'
 
+import signal
 import time
+import traceback
 import pykx as kx
-import pandas as pd
 
-TABLE_NAME = 'trade'
+RTP_PORT = 5015
+TICKERPLANT_PORT = 5010
+SUBSCRIPTION_TABLE = 'trade'
 
-# 使用 with 管理 kdb+ 连接，循环结束或中断时自动关闭
-with kx.QConnection(host='localhost', port=5010) as conn:
-    print("已建立连接，开始每 5 秒持续发送数据（按 Ctrl+C 终止）...")
-    
-    while True:
-        # 1. 动态生成最新的 3 条数据
-        now = pd.Timestamp.now()
-        df = pd.DataFrame({
-            'time': [now + pd.Timedelta(milliseconds=i * 100) for i in range(3)],
-            'sym': ['AAPL', 'GOOG', 'MSFT'],
-            'price': [150.6, 2806.0, 306.2],
-            'size': [106, 206, 156]
-        })
-        
-        # 关键：显式转为 category，保证转为 kdb+ 的 symbol
-        df['sym'] = df['sym'].astype('category')
-        df['size'] = df['size'].astype('int64')
 
-        # 2. 异步推送数据至 kdb+ 目标进程
-        try:
-            result = conn(f'{{ [df] `{TABLE_NAME} insert df }}', df, wait=False) # 异步插入
-            #result = conn('{ [df] `TABLE_NAME insert df }', kx.Table(df) )
-            #result = conn('{ [df] `TABLE_NAME insert df }', df )
-            print(" 返回插入结果:", result)
-        except Exception as e:
-            print("插入失败，错误信息:", e)
-        print(f"[{now}] 已成功推送 {len(df)} 条记录")
-        #print("kdb+ 内存表总行数:", conn(f'count {TABLE_NAME}'))
-#        print("kdb+ 内存表最新 3 条:\n", conn(f'3#{TABLE_NAME}'))
+# RTP 的回调应该直接注册到 RTP 实例上，
+# 而不是只把函数塞进 kx.q 命名空间。
+def upd(table, data):
+    print("========== UPD ==========")
+    print("table:", table)
+    print("data:", data)
+    print("type:", type(data))
 
-        # 3. 间隔 5 秒
-        time.sleep(5)
+    try:
+        df = data.pd()
+        print(f"[{table}] 收到 {len(df)} 条新数据:")
+        print(df)
+    except Exception as e:
+        print(f"[{table}] 处理数据失败: {e!r}")
+        traceback.print_exc()
+
+    # 在这里将数据发往 Kafka、WebSocket 或策略模型
+
+
+def preprocessor(table, data):
+    # 直接透传所有订阅到的数据
+    return data
+
+
+rtp = kx.tick.RTP(
+    port=RTP_PORT,
+    subscriptions=[SUBSCRIPTION_TABLE],
+    libraries={'kx': 'pykx'},
+    pre_processor=preprocessor,
+    post_processor=upd,
+    vanilla=False,
+)
+rtp.start({'tickerplant': f'localhost:{TICKERPLANT_PORT}'})
+
+print(f"RTP 订阅已启动，正在监听 {TICKERPLANT_PORT} 端口的数据推送...")
+
+
+def shutdown(*_args):
+    try:
+        rtp.stop()
+        print(f"RTP 已停止，{RTP_PORT} 端口已释放")
+    except Exception as e:
+        print(f"停止 RTP 失败: {e!r}")
+    raise SystemExit(0)
+
+
+signal.signal(signal.SIGINT, shutdown)
+signal.signal(signal.SIGTERM, shutdown)
+
+while True:
+    time.sleep(1)
