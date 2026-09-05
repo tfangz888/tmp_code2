@@ -1,0 +1,16 @@
+[Unit]
+Description=FRP Server
+After=network.target
+
+[Service]
+Type=simple
+User=root
+ExecStart=/finlab/Tech/Operations/frp/frps -c /finlab/Tech/Operations/frp/frps.toml
+
+Restart=on-failure
+RestartSec=5
+StartLimitInterval=60s
+StartLimitBurst=5
+
+[Install]
+WantedBy=multi-user.target
