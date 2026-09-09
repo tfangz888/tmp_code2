@@ -1,32 +1,13 @@
-import { Sandbox, BarChart } from '@e2b/code-interpreter'
+import { Template } from '@e2b/code-interpreter'
 
-const code = `
-import matplotlib.pyplot as plt
+const template = Template().fromTemplate("code-interpreter-v1")
 
-# Prepare data
-authors = ['Author A', 'Author B', 'Author C', 'Author D']
-sales = [100, 200, 300, 400]
 
-# Create and customize the bar chart
-plt.figure(figsize=(10, 6))
-plt.bar(authors, sales, label='Books Sold', color='blue')
-plt.xlabel('Authors')
-plt.ylabel('Number of Books Sold')
-plt.title('Book Sales by Authors')
 
-# Display the chart
-plt.tight_layout()
-plt.show()
-`
+import { Template, waitForURL } from '@e2b/code-interpreter'
 
-const sandbox = await Sandbox.create()
-const result = await sandbox.runCode(code)
-const chart = result.results[0].chart as BarChart
-
-console.log('Type:', chart.type)
-console.log('Title:', chart.title)
-console.log('X Label:', chart.x_label)
-console.log('Y Label:', chart.y_label)
-console.log('X Unit:', chart.x_unit)
-console.log('Y Unit:', chart.y_unit)
-console.log('Elements:', chart.elements)
+const template = Template()
+    .fromImage("e2bdev/code-interpreter:latest")
+    .setStartCmd(
+        "sudo /root/.jupyter/start-up.sh", waitForURL("http://localhost:49999/health")
+    )
