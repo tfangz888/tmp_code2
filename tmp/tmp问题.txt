@@ -1,13 +1,13 @@
-import { Template } from '@e2b/code-interpreter'
+import { Sandbox } from '@e2b/desktop'
 
-const template = Template().fromTemplate("code-interpreter-v1")
+// Create a desktop sandbox with a 5-minute timeout
+const sandbox = await Sandbox.create({
+  resolution: [1024, 720],
+  dpi: 96,
+  timeoutMs: 300_000,
+})
 
-
-
-import { Template, waitForURL } from '@e2b/code-interpreter'
-
-const template = Template()
-    .fromImage("e2bdev/code-interpreter:latest")
-    .setStartCmd(
-        "sudo /root/.jupyter/start-up.sh", waitForURL("http://localhost:49999/health")
-    )
+// Start VNC streaming for browser-based viewing
+await sandbox.stream.start()
+const streamUrl = sandbox.stream.getUrl()
+console.log('View desktop at:', streamUrl)
