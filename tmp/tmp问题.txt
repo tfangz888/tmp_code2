@@ -1,13 +1,5 @@
-import { Sandbox } from '@e2b/desktop'
+import { Volume } from 'e2b'
 
-// Create a desktop sandbox with a 5-minute timeout
-const sandbox = await Sandbox.create({
-  resolution: [1024, 720],
-  dpi: 96,
-  timeoutMs: 300_000,
-})
+const volume = await Volume.create('my-volume')
 
-// Start VNC streaming for browser-based viewing
-await sandbox.stream.start()
-const streamUrl = sandbox.stream.getUrl()
-console.log('View desktop at:', streamUrl)
+await volume.writeFile('/path/to/file', 'file content')
