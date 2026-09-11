@@ -1,5 +1,11 @@
-import { Volume } from 'e2b'
+import { Sandbox } from 'e2b'
 
-const volume = await Volume.create('my-volume')
+const sandbox = await Sandbox.create('<your template id>')
+await sandbox.files.makeDir('/home/user/bucket')
 
-await volume.writeFile('/path/to/file', 'file content')
+// Create a file with the credentials
+// If you use another path for the credentials you need to add the path in the command s3fs command
+await sandbox.files.write('/root/.passwd-s3fs', '<AWS_ACCESS_KEY_ID>:<AWS_SECRET_ACCESS_KEY>')
+await sandbox.commands.run('sudo chmod 600 /root/.passwd-s3fs')
+
+await sandbox.commands.run('sudo s3fs <flags> <bucket-name> /home/user/bucket')
