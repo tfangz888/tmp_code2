@@ -1,16 +1,24 @@
-[Unit]
-Description=FRP Server
-After=network.target
+AI量化策略研究
 
-[Service]
-Type=simple
-User=root
-ExecStart=/finlab/Tech/Operations/frp/frps -c /finlab/Tech/Operations/frp/frps.toml
 
-Restart=on-failure
-RestartSec=5
-StartLimitInterval=60s
-StartLimitBurst=5
+为什么希望加入量化多策略研究团队：
 
-[Install]
-WantedBy=multi-user.target
+1.	个人兴趣与公司需求保持一致，满足个人多年的情怀，响应HR的招募令
+2.	实现个人入职时的期望与金融领域相关的初衷。
+入职时曾被分到万矿的程吉利的部门，不到两周后程吉利跳槽到希瓦资产，遂被分到TEC的基础服务部。现在是重新回到入职时的起点。
+3.	本着爱好与学习的态度尝试一下新岗位。
+
+个人介绍：
+熟悉从底层硬件原理高性能开发到高层业务服务软件开发，熟悉高性能时序数据库。
+可以使用常见的编程语言编程，包括不限于 Python, 统计语言R, Rust, C++等。
+熟悉机器学习基础原理。
+了解投资相关领域的金融知识。
+
+
+私人代码项目：
+https://github.com/tfangz888/mylab_code.feed.ctp 
+https://github.com/tfangz888/mylab_code.xingye_ut 兴业证券的接入 
+https://github.com/tfangz888/q.xingye 兴业证券的接入
+
+https://github.com/tfangz888/tianchen_ag_arbitrage 入职前的研究期货TICK的KDB+代码
+https://github.com/tfangz888/mylab_code.index 入职前的计算自定义指数的KDB+代码
