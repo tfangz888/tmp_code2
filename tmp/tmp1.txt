@@ -1,10 +1,18 @@
-新代码,旧代码,日期
-sh.601607,sh.600849,20100305
-sh.601360,sh.601313,20180228
-sz.001872,sz.000022,20181226
-sz.001914,sz.000043,20191216
-sz.302132,sz.300114,20250217
-sh.601975,sh.600087,20190108
-sh.601399,sh.601268,20200608
-sz.001267,sz.000765,20211117
+# dagu start-all --config /etc/dagu/config.yaml
+paths:
+  # 存放 DAGs 工作流 YAML 文件的目录（最重要）
+  dags_dir: /opt/dagu/dags
 
+  # 状态数据、运行历史存放目录
+  data_dir: /var/lib/dagu/data
+
+  # Web UI 的 Wiki 页面及 Markdown 文件存放目录
+  wiki_dir: /srv/dagu/wiki
+
+  # 公共基础配置文件路径 (base.yaml)
+  base_config: /etc/dagu/base.yaml
+
+# 递归扫描子目录中的 DAG 文件（可选）
+dag_discovery:
+  recursive: true
+  symlinks: false
