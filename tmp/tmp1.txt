@@ -1,18 +1,47 @@
-# dagu start-all --config /etc/dagu/config.yaml
-paths:
-  # 存放 DAGs 工作流 YAML 文件的目录（最重要）
-  dags_dir: /opt/dagu/dags
 
-  # 状态数据、运行历史存放目录
-  data_dir: /var/lib/dagu/data
+///////////////////////////////////////////////////////////////////////////
+/ 定义表结构
+md_daily:([date:`date$(); sym:`g#`symbol$()];open:`real$();high:`real$();low:`real$();close:`real$();volume:`long$();amount:`float$()) /, amount 32single
 
-  # Web UI 的 Wiki 页面及 Markdown 文件存放目录
-  wiki_dir: /srv/dagu/wiki
 
-  # 公共基础配置文件路径 (base.yaml)
-  base_config: /etc/dagu/base.yaml
+getMarketFolder: {$[
+  (2#x) ~ "sz"; "/finlab/dataset/mydata/stock/AStock/daily/TS/ShenzhenStockExchange/";
+  (2#x) ~ "sh"; "/finlab/dataset/mydata/stock/AStock/daily/TS/ShanghaiStockExchange/";
+  (2#x) ~ "bj"; "/finlab/dataset/mydata/stock/AStock/daily/TS/BeijingStockExchange/";
+  "unknown"]}
 
-# 递归扫描子目录中的 DAG 文件（可选）
-dag_discovery:
-  recursive: true
-  symlinks: false
+/ 1. 核心逻辑封装成函数（参数接收字符串）
+loadStk:{[symParaSymbol; yearParaSymbol]
+    symPara:string symParaSymbol;
+    yearPara:string yearParaSymbol;
+    /show "--- 执行核心逻辑 ---";
+    / 因为 symPara 和 yearPara 是字符串（字符列表），直接用双引号或 join 拼接即可
+    /show "参数 1 (String): ", symPara;
+    /show "参数 2 (String): ", yearPara;
+    / 你的核心逻辑写在这里
+    rawFile:raze (getMarketFolder[symPara];symPara;"/";symPara;".";yearPara);
+    /rawFile:"/finlab/dataset/mydata/stock/AStock/daily/TS/ShenzhenStockExchange/",symPara,"/",symPara,".", yearPara;
+    /show rawFile;
+
+    file:hsym `$rawFile;
+    sym: `$symPara;
+
+    / 错误处理函数接收错误信息 x，打印文件名和错误原因，然后返回空 ()
+    d:@[{("ieeeeei";4 4 4 4 4 4 4) 1: x}; file; {[file;x] 0N! (file; `$"error: ",x); ()}[file]];
+
+    / 如果 d 是空的，说明触发了错误，直接退出
+    if[()~d; :()];
+
+    /d:("ieeeeei";4 4 4 4 4 4 4 )1: file;
+    t:([] date:"D"$string d[0];sym:sym;open:d[1];high:d[2];low:d[3];close:d[4];volume:`long$d[6];amount:`float$d[5]);
+    /`md_daily upsert t
+    t
+ };
+
+
+/ 2. 自动检测是否从命令行传入了参数
+if[2 = count .z.x;
+    / 核心：.z.x 0 和 .z.x 1 本身就是字符串，直接传进去！
+    loadStk[.z.x 0; .z.x 1];
+ ];
+               
