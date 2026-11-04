@@ -1,47 +1,31 @@
+/ Usage:
+/   Start with explicit years: loadAStocksYears.sh 2020 2021
+/   Start with default recent years: loadAStocksYears.sh
+/   After startup, load additional years with: loadAStocksYears.sh 2022 2023
+/ Data stays in this process's in-memory md_daily table.
+\l loadOneAStock1Year.q
 
-///////////////////////////////////////////////////////////////////////////
-/ 定义表结构
-md_daily:([date:`date$(); sym:`g#`symbol$()];open:`real$();high:`real$();low:`real$();close:`real$();volume:`long$();amount:`float$()) /, amount 32single
+/ The shell script uses this mode to add years to an existing port 5082 process.
+if[0<count .z.x;
+    if[`client~first .z.x;
+        years:1_ .z.x;
+        h:hopen `:localhost:5082;
+        h (`loadYears; years);
+        hclose h;
+        exit 0;
+    ];
+ ];
 
+stockRoot:getenv `MYDATA_STOCK;
+stockRoot,:"/AStock";
 
-getMarketFolder: {$[
-  (2#x) ~ "sz"; "/finlab/dataset/mydata/stock/AStock/daily/TS/ShenzhenStockExchange/";
-  (2#x) ~ "sh"; "/finlab/dataset/mydata/stock/AStock/daily/TS/ShanghaiStockExchange/";
-  (2#x) ~ "bj"; "/finlab/dataset/mydata/stock/AStock/daily/TS/BeijingStockExchange/";
-  "unknown"]}
-
-/ 1. 核心逻辑封装成函数（参数接收字符串）
-loadStk:{[symParaSymbol; yearParaSymbol]
-    symPara:string symParaSymbol;
-    yearPara:string yearParaSymbol;
-    /show "--- 执行核心逻辑 ---";
-    / 因为 symPara 和 yearPara 是字符串（字符列表），直接用双引号或 join 拼接即可
-    /show "参数 1 (String): ", symPara;
-    /show "参数 2 (String): ", yearPara;
-    / 你的核心逻辑写在这里
-    rawFile:raze (getMarketFolder[symPara];symPara;"/";symPara;".";yearPara);
-    /rawFile:"/finlab/dataset/mydata/stock/AStock/daily/TS/ShenzhenStockExchange/",symPara,"/",symPara,".", yearPara;
-    /show rawFile;
-
-    file:hsym `$rawFile;
-    sym: `$symPara;
-
-    / 错误处理函数接收错误信息 x，打印文件名和错误原因，然后返回空 ()
-    d:@[{("ieeeeei";4 4 4 4 4 4 4) 1: x}; file; {[file;x] 0N! (file; `$"error: ",x); ()}[file]];
-
-    / 如果 d 是空的，说明触发了错误，直接退出
-    if[()~d; :()];
-
-    /d:("ieeeeei";4 4 4 4 4 4 4 )1: file;
-    t:([] date:"D"$string d[0];sym:sym;open:d[1];high:d[2];low:d[3];close:d[4];volume:`long$d[6];amount:`float$d[5]);
-    /`md_daily upsert t
-    t
+loadCodes:{[file;prefix]
+    c:read0 `$file;
+    c:c where not c~\:"";
+    `$(prefix,/:-6#/:c)
  };
 
-
-/ 2. 自动检测是否从命令行传入了参数
-if[2 = count .z.x;
-    / 核心：.z.x 0 和 .z.x 1 本身就是字符串，直接传进去！
-    loadStk[.z.x 0; .z.x 1];
- ];
-               
+symbols:raze (loadCodes[stockRoot,"/sh.code";"sh"];
+               loadCodes[stockRoot,"/sz.code";"sz"];
+               loadCodes[stockRoot,"/bj.code";"bj"]);
+years:.z.x;
