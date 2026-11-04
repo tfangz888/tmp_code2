@@ -29,3 +29,18 @@ symbols:raze (loadCodes[stockRoot,"/sh.code";"sh"];
                loadCodes[stockRoot,"/sz.code";"sz"];
                loadCodes[stockRoot,"/bj.code";"bj"]);
 years:.z.x;
+
+loadYears:{[years]
+    do[count years;
+        year:first years;
+        -1 "Loading ",year," daily data...";
+        stockData:loadStk[;year] each symbols;
+        stockData:raze stockData where 0<count each stockData;
+        if[count stockData; md_daily::md_daily upsert stockData];
+        years:1_ years;
+    ];
+    -1 "Loaded ",string count (0! md_daily)," rows into md_daily.";
+    count (0! md_daily)
+ };
+
+loadYears[.z.x];
