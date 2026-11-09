@@ -1,2 +1,63 @@
-#!/usr/bin/env bash
-# Usage:
+services:
+  
+  postgres:
+    image: postgres:18-alpine
+    container_name: postgres-18
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: mylabdb
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/18/docker # 把容器里的数据库目录，挂载到名为 postgres 的数据卷上    
+    command:
+      - -c
+      - shared_buffers=256MB
+      - -c
+      - max_connections=100
+      
+volumes:
+  pgdata: { } # # 声明这个数据卷的名字叫 pgdata, 也是一种备份, 但不能跨postgresql版本
+
+
+# docker compose up -d # 启动
+# docker compose stop # 停止不删除容器不删除volume
+# docker compose down # 停止删除容器不删除volume
+# docker compose down -v # 停止删除容器并删除volume
+  
+# 备份数据: docker exec -t postgres-18 pg_dump -U postgres mylabdb > mylabdb_backup.sql
+# 恢复数据可以跨postgresql大版本: docker exec -i postgres-18 psql -U postgres mylabdb < mylabdb_backup.sql
+
+#-------------------------------------------------------------------------------
+
+# 安装 Flyway migrations, 用于升级数据库的schema
+docker pull flyway/flyway
+
+# 写sql schema
+./migrations/
+├── V20261015__init.sql
+└── V20261016__add_users_table.sql
+
+# 执行 Docker 运行命令
+docker run --rm \
+  --network bridge \
+  -v $(pwd)/migrations:/flyway/sql \
+  flyway/flyway \
+  -url=jdbc:postgresql://host.docker.internal:5432/mylabdb \
+  -user=postgres \
+  -password=postgres \
+  migrate
+
+# 检查当前数据库版本状态
+docker run --rm -v $(pwd)/sql:/flyway/sql flyway/flyway \
+  -url=jdbc:postgresql://host.docker.internal:5432/mylabdb \
+  -user=postgres -password=postgres \
+  info
+
+# 修复迁移历史记录表（当校验和冲突时）
+docker run --rm -v $(pwd)/sql:/flyway/sql flyway/flyway \
+  -url=jdbc:postgresql://host.docker.internal:5432/mylabdb \
+  -user=postgres -password=postgres \
+  repair
