@@ -1,11 +1,30 @@
-import { Sandbox } from 'e2b'
-
-const sandbox = await Sandbox.create('<your template id>')
-await sandbox.files.makeDir('/home/user/bucket')
-
-// Create a file with the credentials
-// If you use another path for the credentials you need to add the path in the command s3fs command
-await sandbox.files.write('/root/.passwd-s3fs', '<AWS_ACCESS_KEY_ID>:<AWS_SECRET_ACCESS_KEY>')
-await sandbox.commands.run('sudo chmod 600 /root/.passwd-s3fs')
-
-await sandbox.commands.run('sudo s3fs <flags> <bucket-name> /home/user/bucket')
+| 中文名称 | 英文名称 |
+|---|---|
+| wind代码 | `wind_code` |
+| 名称 | `sec_name` |
+| 总股本(万股) | `issuedshares` |
+| 流通a股(万股) | `floatingashares` |
+| 流通b股(万股) | `floatingbshares` |
+| 流通h股(万股) | `floatinghshares` |
+| 三板a股(万股) | `otcashares` |
+| 三板b股(万股) | `otcbshares` |
+| 境外流通股 | `floatingoverseashares` |
+| 流通股合计 | `allfloatingshares` |
+| 流通a股(限售)(万股) | `floatingashares_locked` |
+| 流通b股(限售)(万股) | `floatingbshares_locked` |
+| 限售股份(国家持股) | `shares_locked_heldbystate` |
+| 限售股份(国有法人持股) | `shares_locked_heldbystateowned_companies` |
+| 限售股份(其他内资持股) | `shares_locked_heldbyotherdomesticshareholders` |
+| 限售股份(境内法人持股)(万股) | `shares_locked_heldbydomesticlegalperson` |
+| 限售股份(机构配售股份)(万股) | `shares_locked_heldbyinstitutionalinvestor` |
+| 限售股份(高管持股)(万股) | `shares_locked_heldbyseniormanagement` |
+| 限售股份(境内自然人持股)(万股) | `shares_locked_heldbydomesticnaturalperson` |
+| 限售股份(外资持股)(万股) | `shares_locked_heldbyforeignshareholders` |
+| 限售股份(境外法人持股)(万股) | `shares_locked_heldbyforeignlegalperson` |
+| 限售股份(境外自然人持股)(万股) | `shares_locked_heldbyforeignnaturalperson` |
+| 流通a股比例 | `floatingashares_percent` |
+| 流通b股比例 | `floatingbshares_percent` |
+| 流通h股比例 | `floatinghshares_percent` |
+| 流通股合计比例 | `allfloatingshares_percent` |
+| 限售a股比例 | `ashares_locked_percent` |
+| 截止日期 | `end_date` |
