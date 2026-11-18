@@ -1,14 +1,6 @@
-name: shutdown-reminder
-schedule: "0 23 * * *"
-steps:
-  - name: notify
-    command: sendmail "[mylab-关机提醒]" "现在是晚上 23:00，请保存工作并关机"
-    
-    
-name: reboot-reminder
-schedule: "0 9 * * 1-5"
+npm install -g @playwright/cli@latest
+playwright-cli --help  # 验证安装
 
-steps:
-  - name: check-reboot
-    command: |
-      [ $(($(date +%s) - $(awk '{print int($1)}' /proc/uptime))) -lt $(date -d "04:00" +%s) ] && sendmail "[mylab-重启提醒]" "机器未在今日 4:00 前重启，建议进行重启"
+playwright-cli install-browser chromium --with-deps # 较庞大
+
+playwright-cli install --skills --global
